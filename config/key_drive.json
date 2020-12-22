@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "bright-vision-298817",
+  "private_key_id": "2a88fc03b33d6995d618c8251d1d0d23c9a248ab",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDOOvULpBxy+s2w\nTp1kDvA2jA6nFI6Ikp/htCPWHYekSucTT08UmZhnplFjyCCsEPqQmF+fYNUpfqWl\nnB8w1F9/uojUmFP+DtFZ9owxOmu6ch+ruhSnJQdn3HjgeDi4pDGNLB5X7uCtoVyg\nslrsmM6y19D2dOwV76vFfcQXYPKzVL82k0iRZGKWm7tLxvwNXoj7eiucnYWOCXG4\nGExrljzbtiBmGseTN/7wQTOLH9jDJcxT44Kyf3C5vw+KZyGH3rEZ6GFVqNV1W0bY\ncWC41dMzwPXdMeGu03UVrzhNT1edQXTdlCrXx2JNxY/Q7FjAqewsd7nyjGydGDjy\njERCaDUrAgMBAAECggEAJv0Scr71+e7ckCZsrwv78fQMmR3TzJIb0+nglIxEppTa\nltX5l2VqYL4ayQh+1Mjo9gk4msMNyah93I9lfi/IVjeHwtmBl5hpj96CppPq5fbJ\ncgfd+7OOcN5Ho/hWkOHJ1Gyw1+L7axgEkQTnF6/T9A/FG7MDJyqGiPG77sePWsOl\nysUgf8yyzZve+Y1qhrierBtWvuCyof5/d8u2aWBPjPNF6/C7uDnjyVLih1s+8K1R\nsI13D2vlh4dxuEVAVUVdRgFvcOoX3rs3IeJ0q8AzG915XoSV1fA2ZbzSdd5a6/UU\nv/Ppl4Z3aJBUZ43tBaLjfuFLLCg8JoHavOKnP1nTkQKBgQD1LLdUV8vrqbTc6mSd\ncV5shLlbZ4eLXvNqUk4+d0158gfDhf2nK+eLXv3sqO2U2L7lCn/KPXo+1pwUdLGU\nZgxzGgT0Biegd78kqq2gtXV0c37an6/2e2IpVyVwmhW+qXAboqSS+pCnetSaDC9I\nbf2ekvz9ZyixLywMzVUjkXOPNQKBgQDXVgp/4TiKN5ne42FgTQHb++XSWgpqsaU5\n+MDLMa0eC/Z0XRAd3O3vg2fPXt/cHLqThrs18E9vDuDWUAnBpMg7CYshOfwWWlFX\nLJ24h4LwtG14ggXmMKGtzmwwMX5C09VND0jSBKKl2gNUPJySS3wOFwEesxKQ7u9U\nIaH856Ve3wKBgQCoyIDpKovzD+C4GRDtJofHk1N7rnkspFBUyJafAEixA8L+grbN\nqDb9xoZurxjn2JMKYMD6vHn02o+WsYMy01IMx0PTro0HNoi7OFjRgzp50azp2vcr\na2N3bEwVCa6glErea4h6us5sze2go3TFmxr3WN+bn7Hu0Le1lIHhO5ffZQKBgQDV\ni54d81v+teUCBLwspDGT1tqzIFf0NveD5gxLdZgYlAR0oVW6R74uKEJqg8u8nUDp\nzFMbypT7reWKoxUJ1EA9S9mNudMk16ySpsxCkyBnVIa7WzY+cTvlATCJGov7+dct\n9Fpi6/XgQ7PJddJPwkvkLSwPJcbjtA/jfvcFtzNoQQKBgA2T/tMCzPusNjcuM/C/\n9oMSNLvavJ0+OZLzV4LrotEmEfKr2u4cXqMnOUOcO5pDg7wsEm9jvzUPDs+sulsb\nj1Q7ULmA+f+g3PN0O6Atoin3dx4JrpzVUAVNlmM5xWBcmUOvo+mk9W21fBq/tTo8\nERt8S/D3xLsEAWJttoiwaA9h\n-----END PRIVATE KEY-----\n",
+  "client_email": "api-setup-google-drive@bright-vision-298817.iam.gserviceaccount.com",
+  "client_id": "113131757250441810108",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/api-setup-google-drive%40bright-vision-298817.iam.gserviceaccount.com"
+}
