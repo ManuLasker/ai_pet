@@ -1,5 +1,6 @@
 import json
 import os
+import torch
 from pathlib import Path
 from torch.functional import norm
 from tqdm.auto import tqdm
@@ -11,7 +12,10 @@ def _get_name_file(full_path: Path):
     return full_path.name
         
 class ImageDataBlending(Dataset):
-    def __init__(self, root_path, normalize:bool = True):
+    def __init__(self, root_path,
+                 device:torch.device = torch.device('cuda') 
+                                    if torch.cuda.is_available() else torch.device('cpu'),
+                 normalize:bool = True):
         # Read all the files
         path_files = [Path(os.path.join(root_path, path)) 
                  for path in os.listdir(root_path)]
@@ -21,6 +25,7 @@ class ImageDataBlending(Dataset):
                            "target": {},
                            "mask": {}}
         self.normalize = normalize
+        self.device = device
         # Getting files paths
         for path in tqdm(path_files, total=len(path_files),
                          desc="Getting Files"):
@@ -33,13 +38,13 @@ class ImageDataBlending(Dataset):
     
     def __getitem__(self, index) -> Dict:
         source = load_image(list(self.image_data["source"].values())[index],
-                            normalize=self.normalize)
+                            normalize=self.normalize, device=self.device)
         target = load_image(list(self.image_data["target"].values())[index],
-                            normalize=self.normalize)
+                            normalize=self.normalize, device=self.device)
         
         dims = json.load(open(list(self.image_data["dims"].values())[index], "r"))
         mask = load_image(list(self.image_data["mask"].values())[index], is_mask=True,
-                          normalize=self.normalize)
+                          normalize=self.normalize, device=self.device)
         
         return {"source": source, "target": target,
                 "dims": [dims["h0"], dims["h0"] + mask.shape[1],
