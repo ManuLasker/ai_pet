@@ -28,7 +28,7 @@ def load_image(path, normalize, is_mask = False,
 def show_image(tensor_image: torch.Tensor):
     transform = T.ToPILImage()
     if len(tensor_image.shape) > 3:
-        tensor_image = tensor_image.squeeze(0)
+        tensor_image = tensor_image.squeeze(0).cpu()
     return transform(tensor_image)
 
 def _numpy(tensor_image: torch.Tensor) -> np.ndarray:
@@ -39,7 +39,7 @@ def _numpy(tensor_image: torch.Tensor) -> np.ndarray:
         else:
             tensor_image = tensor_image.squeeze(0)
             
-    array_image = np.transpose(tensor_image.numpy(), (1, 2, 0))
+    array_image = np.transpose(tensor_image.cpu().numpy(), (1, 2, 0))
     _, _, c = array_image.shape
     if c == 1:
         return array_image.squeeze(2)
