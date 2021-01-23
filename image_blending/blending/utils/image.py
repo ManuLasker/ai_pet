@@ -1,5 +1,4 @@
 import PIL
-from numpy.core.defchararray import array
 import torch
 import numpy as np
 import torch.nn as nn
