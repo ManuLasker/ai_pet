@@ -1,1 +1,1 @@
-from .utils.image import show_image
+from .utils.image import _pil_image

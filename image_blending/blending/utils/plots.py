@@ -77,6 +77,10 @@ def plots_multiple_tensor_image(*tensor_images, title_name:list=[None],
                                 figsize:Tuple[int, int]=(14, 10),
                                 normalize:bool = True):
     total_images = len(tensor_images)
+    
+    if total_images > len(title_name):
+        extras = total_images - len(title_name)
+        title_name.extend(range(extras))
         
     if ncols is None and nrows is None:
         nrows, ncols, total_images = get_subplots_config(total_images)

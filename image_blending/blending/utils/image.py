@@ -24,7 +24,7 @@ def load_image(path, normalize, is_mask = False,
             image = _to_tensor(Image.open(path).convert("L"), device=device)
         return image
     
-def show_image(tensor_image: torch.Tensor):
+def _pil_image(tensor_image: torch.Tensor):
     transform = T.ToPILImage()
     if len(tensor_image.shape) > 3:
         tensor_image = tensor_image.squeeze(0).cpu()
@@ -137,3 +137,8 @@ def get_blending_gradients(image_data:dict, tensor_image:torch.Tensor,
     gradient_blend = [ ch_img_gradient + ch_target_gradient
                       for ch_img_gradient, ch_target_gradient in zip(tensor_image_gradient, rgb_channel_target)]
     return gradient_blend
+
+def normalize_image(tensor_image: torch.Tensor):
+    normalize = T.Normalize(mean=[0.485, 0.456, 0.406],
+                            std=[0.229, 0.224, 0.225])
+    return normalize(tensor_image)
