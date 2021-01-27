@@ -37,13 +37,17 @@ class ImageDataBlending(Dataset):
         return len(self.image_data["dims"])
     
     def __getitem__(self, index) -> Dict:
-        source = load_image(list(self.image_data["source"].values())[index],
+        # Assert error in order to stop the indexing
+        list(self.image_data["source"].values())[index]
+        
+        # Load images
+        source = load_image(self.image_data["source"][index + 1],
                             normalize=self.normalize, device=self.device)
-        target = load_image(list(self.image_data["target"].values())[index],
+        target = load_image(self.image_data["target"][index + 1],
                             normalize=self.normalize, device=self.device)
         
-        dims = json.load(open(list(self.image_data["dims"].values())[index], "r"))
-        mask = load_image(list(self.image_data["mask"].values())[index], is_mask=True,
+        dims = json.load(open(self.image_data["dims"][index + 1], "r"))
+        mask = load_image(self.image_data["mask"][index + 1], is_mask=True,
                           normalize=self.normalize, device=self.device)
         
         return {"source": source, "target": target,

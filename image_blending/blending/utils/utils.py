@@ -1,0 +1,2 @@
+def log(**kwargs):
+    print()

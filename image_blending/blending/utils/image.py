@@ -109,18 +109,21 @@ def get_mixing_gradients(image_data:dict,
     source = image_data['source']
     mask = image_data['mask']
     dims = image_data['dims']
-    target = get_target_subimg(image_data['target'], mask, dims)
+    target = image_data['target']
+    # target = get_target_subimg(image_data['target'], mask, dims)
     
     rgb_source_gradients = [channel_gradient * mask 
                             for channel_gradient in get_image_laplacian_operator(source, device=device)]
-    rgb_channel_target = [target[:, ch, :, :].unsqueeze(1) * (1 - mask) 
-                          for ch in range(3)]
+    rgb_target_gradients = [channel_gradient * (1 - mask)
+                            for channel_gradient in get_image_laplacian_operator(target, device=device)]
+    # rgb_channel_target = [target[:, ch, :, :].unsqueeze(1) * (1 - mask) 
+    #                       for ch in range(3)]
     # gradients_mix = [ source_channel * alpha + target_channel * (1 - alpha)
     #                  for source_channel, target_channel in zip(rgb_source_gradients,
     #                                                             rgb_channel_target)]
     gradients_mix = [ source_channel + target_channel
                      for source_channel, target_channel in zip(rgb_source_gradients,
-                                                                rgb_channel_target)]
+                                                                rgb_target_gradients)]
     return gradients_mix
 
 def get_blending_gradients(image_data:dict, tensor_image:torch.Tensor,
@@ -128,14 +131,19 @@ def get_blending_gradients(image_data:dict, tensor_image:torch.Tensor,
                            alpha=0.5):
     mask = image_data['mask']
     dims = image_data['dims']
-    target = get_target_subimg(image_data['target'], mask, dims)
+    # target = get_target_subimg(image_data['target'], mask, dims)
     
-    tensor_image_gradient = [channel_gradient * mask
-                             for channel_gradient in get_image_laplacian_operator(tensor_image, device=device)]
-    rgb_channel_target = [target[:, ch, :, :].unsqueeze(1) * (1 - mask) 
-                          for ch in range(3)]
-    gradient_blend = [ ch_img_gradient + ch_target_gradient
-                      for ch_img_gradient, ch_target_gradient in zip(tensor_image_gradient, rgb_channel_target)]
+    # tensor_image_gradient = [channel_gradient * mask
+    #                          for channel_gradient in get_image_laplacian_operator(tensor_image,
+    #                                                                               device=device)]
+    # rgb_channel_target = [target[:, ch, :, :].unsqueeze(1) * (1 - mask) 
+    #                       for ch in range(3)]
+    # gradient_blend = [ ch_img_gradient + ch_target_gradient
+    #                   for ch_img_gradient, ch_target_gradient in zip(tensor_image_gradient,
+    #                                                                  rgb_channel_target)]
+    gradient_blend = [channel_gradient 
+                      for channel_gradient in get_image_laplacian_operator(tensor_image,
+                                                                           device=device)]
     return gradient_blend
 
 def normalize_image(tensor_image: torch.Tensor):
