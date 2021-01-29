@@ -22,6 +22,7 @@ def load_image(path, normalize, is_mask = False,
             image = torch.from_numpy(image).unsqueeze(0).to(device=device)
         else:
             image = _to_tensor(Image.open(path).convert("L"), device=device)
+        # image[image > 0] = 1
         return image
     
 def _pil_image(tensor_image: torch.Tensor):
@@ -75,16 +76,6 @@ def get_image_laplacian_operator(tensor_image: torch.Tensor,
                                  device: torch.device = torch.device('cpu')) -> Tuple[torch.Tensor,
                                                             torch.Tensor,
                                                             torch.Tensor]:
-    """Apply laplacian operators in one image, 
-        for batches is need that all images are the same sizes
-
-    Args:
-        tensor_images (torch.Tensor): Tensor Images [1, Ch, H, W]
-
-    Returns:
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: Gradients for each channel image
-                    ([1, redChannel, H, W], [1, greenChannel, H, W], [1, blueChannel, H, W])
-    """
     laplacian_kernel = get_laplacian_kernel(device)
     laplacian_conv = nn.Conv2d(in_channels=1,
                                 out_channels=1,
@@ -126,11 +117,11 @@ def get_mixing_gradients(image_data:dict,
                                                                 rgb_target_gradients)]
     return gradients_mix
 
-def get_blending_gradients(image_data:dict, tensor_image:torch.Tensor,
+def get_blending_gradients(tensor_image:torch.Tensor,
                            device:torch.device = torch.device('cpu'),
                            alpha=0.5):
-    mask = image_data['mask']
-    dims = image_data['dims']
+    # mask = image_data['mask']
+    # dims = image_data['dims']
     # target = get_target_subimg(image_data['target'], mask, dims)
     
     # tensor_image_gradient = [channel_gradient * mask
