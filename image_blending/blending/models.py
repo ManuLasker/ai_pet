@@ -20,13 +20,14 @@ class VGG16_Model(nn.Module):
             self.slice3.add_module(str(x), vgg_pretrained_features[x])
         for x in range(16, 23):
             self.slice4.add_module(str(x), vgg_pretrained_features[x])
-            
+
         if not requires_grad:
             for param in self.parameters():
                 param.requires_grad = False
-                
-        
 
+        self.style_layers = ['relu1_2', 'relu3_3', 'relu4_3']
+        self.content_layers = ['relu2_2']
+                
     def forward(self, X):
         h = self.slice1(X)
         h_relu1_2 = h
@@ -36,9 +37,14 @@ class VGG16_Model(nn.Module):
         h_relu3_3 = h
         h = self.slice4(h)
         h_relu4_3 = h
-        vgg_outputs = namedtuple("VggOutputs", ['relu1_2', 'relu2_2', 'relu3_3', 'relu4_3'])
-        out = vgg_outputs(h_relu1_2, h_relu2_2, h_relu3_3, h_relu4_3)
-        return out
+
+        vgg_outputs = {
+            'relu1_2': h_relu1_2,
+            'relu2_2': h_relu2_2,
+            'relu3_3': h_relu3_3,
+            'relu4_3': h_relu4_3
+        }
+        return vgg_outputs
 
 class VGG11_Model(nn.Module):
     def __init__(self, requires_grad=False):
@@ -57,10 +63,13 @@ class VGG11_Model(nn.Module):
             self.slice3.add_module(str(x), vgg_pretrained_features[x])
         for x in range(10, 15):
             self.slice4.add_module(str(x), vgg_pretrained_features[x])
-            
+        
         if not requires_grad:
             for param in self.parameters():
                 param.requires_grad = False
+
+        self.style_layers = ['relu1_2', 'relu3_3', 'relu4_3']
+        self.content_layers = ['relu2_2']
 
     def forward(self, X):
         h = self.slice1(X)
@@ -71,9 +80,14 @@ class VGG11_Model(nn.Module):
         h_relu3_3 = h
         h = self.slice4(h)
         h_relu4_3 = h
-        vgg_outputs = namedtuple("VggOutputs", ['relu1_2', 'relu2_2', 'relu3_3', 'relu4_3'])
-        out = vgg_outputs(h_relu1_2, h_relu2_2, h_relu3_3, h_relu4_3)
-        return out
+        
+        vgg_outputs = {
+            'relu1_2': h_relu1_2,
+            'relu2_2': h_relu2_2,
+            'relu3_3': h_relu3_3,
+            'relu4_3': h_relu4_3
+        }
+        return vgg_outputs
     
 class MeanShift(nn.Conv2d):
     def __init__(self):
