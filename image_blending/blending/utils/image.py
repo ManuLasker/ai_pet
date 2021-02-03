@@ -3,7 +3,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 
-from typing import Tuple, List
+from typing import Tuple
 import torchvision.transforms as T 
 from PIL import Image
 
@@ -14,15 +14,19 @@ def load_image(path, normalize, is_mask = False,
             image = np.asarray(Image.open(path).convert("RGB"), dtype=np.float32)
             image = torch.from_numpy(np.transpose(image, (2, 0, 1))).to(device=device)
         else:
-            image = _to_tensor(Image.open(path).convert("RGB"), device=device)
+            image = np.asarray(Image.open(path).convert("RGB"), dtype=np.float32)/255.0
+            image = _to_tensor(image, is_normalize=normalize,
+                               device=device)
         return image
     else:
         if not normalize:
             image = np.asarray(Image.open(path).convert("L"), dtype=np.float32)
             image = torch.from_numpy(image).unsqueeze(0).to(device=device)
         else:
-            image = _to_tensor(Image.open(path).convert("L"), device=device)
-        # image[image > 0] = 1
+            image = np.asarray(Image.open(path).convert("L"), dtype=np.float32)/255.0
+            image = _to_tensor(image, is_normalize=normalize,
+                               device=device)
+        image[image > 0] = 1
         return image
     
 def _pil_image(tensor_image: torch.Tensor):
@@ -46,22 +50,25 @@ def _numpy(tensor_image: torch.Tensor) -> np.ndarray:
     else:
         return array_image
     
-def _to_tensor(image, device:torch.device = torch.device('cpu')) -> torch.Tensor:
+def _to_tensor(image, is_normalize:bool = True, 
+               device:torch.device = torch.device('cpu')) -> torch.Tensor:
     # Transfor pil image or numpy array image to torch.image
     if isinstance(image, np.ndarray):
+        if not is_normalize:
+            image /= 255.0
         if len(image.shape) == 3:
             image = np.transpose(image, (2, 0, 1))
-            image = torch.tensor(image/255.0, 
+            image = torch.tensor(image, 
                                  dtype=torch.float32, device=device)
             return image
         elif len(image.shape) == 2:
-            image = torch.tensor(image/255.0, 
+            image = torch.tensor(image, 
                                  dtype=torch.float32, device=device).unsqueeze(0)
             return image
     else:
         # is a pil image
-        image = np.asarray(image)
-        return _to_tensor(image, device)
+        image = np.array(image, dtype=np.float32)
+        return _to_tensor(image, is_normalize, device)
 
 def get_laplacian_kernel(device:torch.device = torch.device('cpu')) -> torch.Tensor:
     laplacian_kernel = torch.tensor([
@@ -112,14 +119,13 @@ def get_mixing_gradients(image_data:dict,
     # gradients_mix = [ source_channel * alpha + target_channel * (1 - alpha)
     #                  for source_channel, target_channel in zip(rgb_source_gradients,
     #                                                             rgb_channel_target)]
-    gradients_mix = [ source_channel + target_channel
+    gradients_mix = [ source_channel * alpha + target_channel * (1 - alpha)
                      for source_channel, target_channel in zip(rgb_source_gradients,
                                                                 rgb_target_gradients)]
     return gradients_mix
 
 def get_blending_gradients(tensor_image:torch.Tensor,
-                           device:torch.device = torch.device('cpu'),
-                           alpha=0.5):
+                           device:torch.device = torch.device('cpu')):
     # mask = image_data['mask']
     # dims = image_data['dims']
     # target = get_target_subimg(image_data['target'], mask, dims)
@@ -141,3 +147,35 @@ def normalize_image(tensor_image: torch.Tensor):
     normalize = T.Normalize(mean=[0.485, 0.456, 0.406],
                             std=[0.229, 0.224, 0.225])
     return normalize(tensor_image)
+
+def resize_pad_image(tensor_image: torch.Tensor, new_shape: tuple) -> torch.Tensor:
+    """Resize and pad if is needed
+
+    Args:
+        tensor_image (torch.Tensor): tensor image from load (ch, h, w)
+        new_shape (tuple[int, int]): tuple int (h_new, w_new)
+    """
+    # ratio
+    old_h, old_w = tensor_image.shape[1:]
+    new_h, new_w = new_shape
+    r = min(new_h/old_h, new_w/old_w)
+    
+    # Get padding
+    new_unpad_h, new_unpad_w = round(old_h * r), round(old_w * r)
+    dh, dw = (new_h - new_unpad_h)/2, (new_w - new_unpad_w)/2
+    top, bottom = round(dh - 0.1), round(dh + 0.1)
+    left, right = round(dw - 0.1), round(dw + 0.1)
+    
+    transform = T.Compose([
+        T.Resize(size=(new_unpad_h, new_unpad_w)),
+        T.Pad(padding=(left, top, right, bottom))
+    ])
+    
+    return transform(tensor_image)
+
+def resize_width_image(tensor_image: torch.Tensor, new_w: int) -> torch.Tensor:
+    old_h, old_w = tensor_image.shape[1:]
+    r = new_w/old_w
+    new_shape = (int(r * old_h), int(r * old_w))
+    transform = T.Resize(size=new_shape)
+    return transform(tensor_image)
