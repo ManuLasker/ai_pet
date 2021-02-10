@@ -1,9 +1,11 @@
 import PIL
+import cv2
 import torch
 import numpy as np
 import torch.nn as nn
 
 from typing import Tuple
+from .general import get_dimensions_box, scale_coordinates, get_middel_point, xywh2xyxy, xyxy2xywh
 import torchvision.transforms as T 
 from PIL import Image
 
@@ -170,6 +172,56 @@ def resize_pad_image(tensor_image: torch.Tensor,
 
 def prepare_images_arrays(mask: np.ndarray, 
                    source:np.ndarray,
-                   target:np.ndarray):
+                   target:np.ndarray,
+                   dims: np.ndarray):
+    # resize target
+    target_old_shape = target.shape[:-1]
+    target = resize_pad_image(target, new_shape=(640, 640))
+    tm_coords = scale_coordinates(new_shape=(640, 640),
+                                  coordinates=dims,
+                                  old_shape=target_old_shape)
+    target_mp = get_middel_point(tm_coords)
+    # mask and source information
+    sm_coords, source_mp = get_bbInfo_from_mask(source=source,
+                                                mask=mask)
+    # get new mask with grabcut algorithm
+    mask = get_grabcut(source=source, mask=mask, rect=sm_coords)
+    # crop mask and source
+    sm_coords = sm_coords.astype(int)
+    mask = mask[sm_coords[1]:sm_coords[3], sm_coords[0]:sm_coords[2]]
+    source = source[sm_coords[1]:sm_coords[3], sm_coords[0]:sm_coords[2]]
+    # resize crops to match w, h of target membrane
+    tmw, tmh = get_dimensions_box(tm_coords)
+    mask = resize_pad_image(mask, new_shape=(tmh, tmw))
+    source = resize_pad_image(source, new_shape=(tmh, tmw))
+    return mask, source/255.0, target/255.0, tm_coords
     
-    pass
+def get_bbInfo_from_mask(source:np.ndarray, mask:np.ndarray):
+    # Get Contours
+    contours, _ = cv2.findContours(image=mask.astype(np.uint8),
+                                   mode=cv2.RETR_TREE,
+                                   method=cv2.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+    # Get bounding box from contours
+    c = contours[0]
+    sm_coords = np.array(cv2.boundingRect(c), dtype=np.int32)
+    sm_coords = xywh2xyxy(sm_coords.astype(np.float32))
+    source_mp = get_middel_point(sm_coords.astype(np.float32))
+    
+    return sm_coords, source_mp
+
+def get_grabcut(source, mask, rect):
+    # Numpy configuration
+    bgdModel = np.zeros(shape=(1, 65), dtype=np.float64)
+    fgdModel = np.zeros(shape=(1, 65), dtype=np.float64)
+    
+    # Grab cut
+    mask_grabcut, _, _ = cv2.grabCut(source.astype(np.uint8),
+                                     mask.astype(np.uint8), xyxy2xywh(rect),
+                                     bgdModel=bgdModel, fgdModel=fgdModel,
+                                     iterCount=10, mode=cv2.GC_INIT_WITH_MASK)
+    
+    # process grab cut
+    mask_grabcut = np.where((mask_grabcut == 2)|(mask_grabcut == 0),
+                            0, 1).astype(np.uint8)
+    return mask_grabcut
