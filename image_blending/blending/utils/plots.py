@@ -2,14 +2,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from typing import Tuple
-from .image import _numpy
+from .image import _numpy, unormalize_image
 
 IMAGE_DATA_KEYS = ['source', 'target', 'mask']
 
-def plots_multiple_image_data(*images_data, normalize=True):    
+def plots_multiple_image_data(*images_data, normalize=True, figsize=(10, 5)):    
     fig, ax = plt.subplots(nrows=len(images_data),
                            ncols=len(IMAGE_DATA_KEYS),
-                           figsize=(14, 10),
+                           figsize=figsize,
                            tight_layout=True)
     if len(images_data) == 1:
         ax = ax.reshape(1, -1)
@@ -32,6 +32,41 @@ def plots_multiple_image_data(*images_data, normalize=True):
         
         ax[nrow_plot][2].set_title("target image")
         ax[nrow_plot][2].imshow(target)
+    plt.show()
+    
+def plots_multiple_segmentation_data(*images_data, preprocess=False,
+                                     normalize=True, figsize=(10, 5)):
+    fig, ax = plt.subplots(nrows=len(images_data),
+                           ncols=len(images_data[0].keys()),
+                           figsize=figsize,
+                           tight_layout=True)
+    if len(images_data) == 1:
+        if not isinstance(ax, np.ndarray):
+            ax = np.array(ax)
+        ax = ax.reshape(1, -1)
+        
+    for nrow_plot, image_data in enumerate(images_data):
+        if preprocess:
+            source = _numpy(unormalize_image(image_data['source']))
+        else:
+            source = _numpy(image_data['source'])
+            
+        mask = image_data.get("mask", None)
+        if mask is not None:
+            mask = _numpy(mask)
+            
+        if not normalize:
+            source = source.astype(np.uint8)
+            if mask is not None:
+                mask = mask.astype(np.uint8)
+            
+        ax[nrow_plot][0].set_title("source image")
+        ax[nrow_plot][0].imshow(source)
+        
+        if mask is not None:
+            ax[nrow_plot][1].set_title("mask image")
+            ax[nrow_plot][1].imshow(mask, cmap="gray")
+        
     plt.show()
         
 def get_subplots_config(total_images:int,

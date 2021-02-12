@@ -1,5 +1,6 @@
 import json
 import os
+from os import path
 import torch
 import numpy as np
 from pathlib import Path
@@ -7,7 +8,8 @@ from torch.functional import norm
 from tqdm.auto import tqdm
 from typing import Dict, Tuple
 from torch.utils.data import Dataset
-from .image import (load_image, _numpy,
+from .image import (load_image, _numpy, _to_tensor,
+                    normalize_image, resize_pad_image,
                     prepare_images_arrays, _pil_image)
 
 IMG_EXTENSIONS = ['jpg', 'png', 'jpeg', 'json']
@@ -104,12 +106,64 @@ class ImageDataBlending(Dataset):
                 "dims": dims,
                 "mask": mask}
         
-class SegmentationDataset(Dataset):
-    def __init__(self) -> None:
-        super().__init__()
+class SegmentationData(Dataset):
+    def __init__(self, image_dir, mask_dir=None,
+                 img_size=(224, 224),
+                 device=torch.device("cpu"),
+                 preprocess = True) -> None:
+        self.img_size = img_size
+        self.device = device
+        self.preprocess = preprocess
+        img = [Path(os.path.join(image_dir, path)) 
+                for path in os.listdir(image_dir)
+                if path.split(".")[-1] in IMG_EXTENSIONS and "mask" not in path]
+        img = sorted(img, key=lambda path: int(_get_name_file(path).split("_")[1].split(".")[0]))
+        
+        if mask_dir is None:
+            self.train = False
+            self.img_paths = {
+                "img": img
+            }
+        else:
+            self.train = True
+            mask = [Path(os.path.join(mask_dir, path))
+                    for path in os.listdir(mask_dir)
+                    if path.split(".")[-1] in IMG_EXTENSIONS and "source" not in path]
+            mask = sorted(mask, key=lambda path: int(_get_name_file(path).split("_")[1].split(".")[0]))
+            self.img_paths = {
+                "img": img,
+                "mask": mask
+            }
         
     def __len__(self) -> int:
-        pass
+        return len(self.img_paths["img"])
+    
+    def preprocess_img(self, img: torch.Tensor):
+        if self.preprocess:
+            img = img/255.0
+            img = normalize_image(img)
+            img = resize_pad_image(img, new_shape=self.img_size)
+        return img
+    
+    def preprocess_mask(self, mask: torch.Tensor):
+        if self.preprocess:
+            mask = resize_pad_image(mask, new_shape=self.img_size)
+        return mask
     
     def __getitem__(self, index) -> list:
-        pass
+        if self.train:
+            mask = load_image(self.img_paths['mask'][index], is_mask=True, 
+                              device=self.device)
+            img = load_image(self.img_paths["img"][index], device=self.device)
+            original_shape = tuple(img.shape)
+            img = self.preprocess_img(img)
+            return {"source":img, "mask":self.preprocess_mask(mask),
+                    "original_shape": original_shape[1:],
+                    "new_shape": self.img_size}
+        else:
+            img = load_image(self.img_paths["img"][index], device=self.device)
+            original_shape = tuple(img.shape)
+            img = self.preprocess_img(img)
+            return {"source":img,
+                    "original_shape": original_shape[1:],
+                    "new_shape": self.img_size}

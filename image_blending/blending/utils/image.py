@@ -143,6 +143,12 @@ def normalize_image(tensor_image: torch.Tensor):
                             std=[0.229, 0.224, 0.225])
     return normalize(tensor_image)
 
+def unormalize_image(tensor_image:torch.Tensor):
+    mean = np.array([0.485, 0.456, 0.406])
+    std = np.array([0.229, 0.224, 0.225])
+    unormalize = T.Normalize(mean=-mean/std, std=1/std)
+    return unormalize(tensor_image)
+
 def resize_pad_image(tensor_image: torch.Tensor,
                      new_shape: tuple) -> torch.Tensor:
     """Resize and pad if is needed
@@ -169,6 +175,32 @@ def resize_pad_image(tensor_image: torch.Tensor,
         T.Pad(padding=(left, top, right, bottom))
     ])
     return transform(tensor_image)
+
+def resize_up(tensor_image: torch.Tensor,
+              down_shape: tuple,
+              up_shape: tuple,
+              is_mask = True):
+    # get shapes
+    down_h, down_w = down_shape
+    up_h, up_w = up_shape
+    
+    # ratio
+    r_down = min(down_h/up_h, down_w/up_w)
+    new_unpad_h, new_unpad_w = round(up_h * r_down), round(up_w * r_down)
+    
+    # padding elimination
+    dh, dw = (down_h - new_unpad_h)/2, (down_w - new_unpad_w)/2
+    top, bottom = round(dh - 0.1), round(dh + 0.1)
+    left, right = round(dw - 0.1), round(dw + 0.1)
+    
+    new_image = tensor_image[:, top: bottom + new_unpad_h, left: right + new_unpad_w]
+    transform = T.Resize(size=(up_h, up_w))
+    
+    # Result
+    result = transform(new_image)
+    if is_mask:
+        result[result > 0] = 1
+    return result
 
 def prepare_images_arrays(mask: np.ndarray, 
                    source:np.ndarray,
