@@ -2,10 +2,14 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+*/cvat_data
+*/data
 # C extensions
+*/lightning_logs
 *.so
-
+*.tar.xz
+# .pem extensions
+*.pem
 # Distribution / packaging
 .Python
 build/
