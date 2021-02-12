@@ -60,11 +60,13 @@ class Predictor:
     @classmethod
     def load_model(cls, model_path:str):
         if cls.model is None:
-            cls.model = "model"
+            cls.model = torch.jit.load(model_path)
         return cls.model
     
     @classmethod
     def predict(cls, x: torch.Tensor):
         model = cls.load_model(cls.model_path)
-        prediction = model(x)
-        return prediction
+        model.eval()
+        with torch.no_grad():
+            prediction: torch.Tensor = model(x)
+        return prediction.squeeze(0).sigmoid()
