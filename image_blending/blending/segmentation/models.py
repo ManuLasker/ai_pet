@@ -3,9 +3,6 @@ import pytorch_lightning as pl
 import torch
 import numpy as np
 import torch.optim as optim
-from torch.nn import parameter
-import torch.nn.functional as F
-from torch.functional import Tensor
 from torchvision import models
 import torch.nn as nn
 
