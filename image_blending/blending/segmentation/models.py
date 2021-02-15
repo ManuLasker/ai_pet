@@ -45,6 +45,21 @@ class VG16BackBoneSegmentation(nn.Module):
         x = self.avgpool(x)
         return x
 
+class Backbone(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.model = nn.Sequential(
+            nn.Conv2d(3, 3, 25, 25),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(3, 3)
+        )
+        self.out_features = np.prod(self(torch.zeros(1, 3, 224, 224)).shape)
+        print(self.out_features)
+        
+    def forward(self, x):
+        x = self.model(x)
+        return x
+    
 class SegmentationNaive(nn.Module):
     def __init__(self, img_shape=(224, 224),
                  requires_grad_backbone:bool = False,
@@ -54,6 +69,8 @@ class SegmentationNaive(nn.Module):
             self.backbone = VG11BackBoneSegmentation(requires_grad=requires_grad_backbone)
         elif backbone == 16:
             self.backbone = VG16BackBoneSegmentation(requires_grad=requires_grad_backbone)
+        elif backbone == 0:
+            self.backbone = Backbone()
             
         self.decoder = nn.Sequential(
             Lambda(reshape_batch),
