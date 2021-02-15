@@ -69,4 +69,4 @@ class Predictor:
         model.eval()
         with torch.no_grad():
             prediction: torch.Tensor = model(x)
-        return prediction.squeeze(0).sigmoid()
+        return prediction.softmax(dim=1).argmax(dim=1)
