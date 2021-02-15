@@ -77,7 +77,7 @@ class SegmentationFCN(nn.Module):
         pass
     
 class SegmentationModule(pl.LightningModule):
-    def __init__(self, model, loss):
+    def __init__(self, model:nn.Module, loss):
         super().__init__()
         self.model = model
         self.loss = loss
@@ -86,7 +86,7 @@ class SegmentationModule(pl.LightningModule):
         return self.model(x)
     
     def configure_optimizers(self):
-        optimizer = optim.Adam([filter(lambda p: p.requires_grad), self.parameters()])
+        optimizer = optim.Adam(filter(lambda p: p.requires_grad, self.parameters()))
         return optimizer
     
     def training_step(self, train_batch, batch_idx):
