@@ -2,6 +2,7 @@ import PIL
 import cv2
 import torch
 import numpy as np
+from torch._C import dtype
 import torch.nn as nn
 
 from typing import Tuple
@@ -200,7 +201,7 @@ def resize_up(tensor_image: torch.Tensor,
     result = transform(new_image)
     if is_mask:
         result[result > 0] = 1
-    return result
+    return result.to(dtype=torch.float32)
 
 def prepare_images_arrays(mask: np.ndarray, 
                    source:np.ndarray,
