@@ -54,7 +54,6 @@ class Backbone(torch.nn.Module):
             nn.MaxPool2d(3, 3)
         )
         self.out_features = np.prod(self(torch.zeros(1, 3, 224, 224)).shape)
-        print(self.out_features)
         
     def forward(self, x):
         x = self.model(x)
