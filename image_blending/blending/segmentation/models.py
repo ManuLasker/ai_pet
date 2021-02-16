@@ -5,6 +5,7 @@ import numpy as np
 import torch.optim as optim
 from torchvision import models
 import torch.nn as nn
+import torch.nn.functional as F
 
 class Lambda(nn.Module):
     def __init__(self, func):
@@ -17,8 +18,10 @@ class Lambda(nn.Module):
 class VG11BackBoneSegmentation(nn.Module):
     def __init__(self, requires_grad:bool = False):
         super().__init__()
-        self.vgg_pretrained_features = models.vgg11(pretrained=True).features
-        self.avgpool = models.vgg11(pretrained=True).avgpool
+        vgg16 = models.vgg11(pretrained=True)
+        self.vgg_pretrained_features = vgg16.features
+        self.avgpool = vgg16.avgpool
+        self.classifier = vgg16.classifier
         if not requires_grad:
             for parameter in self.parameters():
                 parameter.requires_grad = False
@@ -32,8 +35,10 @@ class VG11BackBoneSegmentation(nn.Module):
 class VG16BackBoneSegmentation(nn.Module):
     def __init__(self, requires_grad:bool = False):
         super().__init__()
-        self.vgg_pretrained_features = models.vgg16(pretrained=True).features
-        self.avgpool = models.vgg16(pretrained=True).avgpool
+        vgg16 = models.vgg16(pretrained=True)
+        self.vgg_pretrained_features = vgg16.features
+        self.avgpool = vgg16.avgpool
+        self.classifier = vgg16.classifier
         if not requires_grad:
             for parameter in self.parameters():
                 parameter.requires_grad = False
@@ -45,7 +50,7 @@ class VG16BackBoneSegmentation(nn.Module):
         x = self.avgpool(x)
         return x
 
-class Backbone(torch.nn.Module):
+class BackboneNaive(torch.nn.Module):
     def __init__(self):
         super().__init__()
         self.model = nn.Sequential(
@@ -69,7 +74,7 @@ class SegmentationNaive(nn.Module):
         elif backbone == 16:
             self.backbone = VG16BackBoneSegmentation(requires_grad=requires_grad_backbone)
         elif backbone == 0:
-            self.backbone = Backbone()
+            self.backbone = BackboneNaive()
             
         self.decoder = nn.Sequential(
             Lambda(reshape_batch),
@@ -85,17 +90,59 @@ class SegmentationNaive(nn.Module):
 def reshape_batch(x:torch.Tensor):
     return x.view(x.size(0), -1)
 
-class SegmentationFCN(nn.Module):
-    def __init__(self):
+class VGGFCN(nn.Module):
+    def __init__(self, backbone:int = 16, requires_grad:bool = False):
         super().__init__()
+        self.vgg = VG16BackBoneSegmentation(requires_grad)
+        self.classifier = nn.Sequential(
+            nn.Conv2d(512, 4096, kernel_size=7, padding=3),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5, inplace=False),
+            nn.Conv2d(4096, 4096, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5, inplace=False),
+            nn.Conv2d(4096, 1000, kernel_size=1),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5, inplace=False),
+            nn.Conv2d(1000, 1, kernel_size=1)
+        )
+        # Process to transfer weights from linear layers
+        # into convolutionar layers
+        self._initialize_weights()
+        for param in self.classifier.parameters():
+            param.requires_grad = True
+        
+    def _initialize_weights(self):
+        self.classifier[0].weight.data = (
+            self.vgg.classifier[0].weight.data.view(
+                self.classifier[0].weight.size()
+            )
+        )
+        self.classifier[3].weight.data = (
+            self.vgg.classifier[3].weight.data.view(
+                self.classifier[3].weight.size()
+            )
+        )
+        self.classifier[6].weight.data = (
+            self.vgg.classifier[6].weight.data.view(
+                self.classifier[6].weight.size()
+            )
+        )
         
     def forward(self, x:torch.Tensor):
-        pass
+        bs, _, h, w = x.size()
+        x = self.vgg.features(x)
+        x = self.vgg.avgpool(x)
+        x = self.classifier(x)
+        x = F.interpolate(x, size=(h, w),
+                         mode='bilinear', align_corners=True)
     
 class SegmentationModule(pl.LightningModule):
-    def __init__(self, model:nn.Module, loss):
+    def __init__(self, model:nn.Module, loss,
+                 is_fcn:bool=True):
         super().__init__()
         self.model = model
+        self.is_fcn = is_fcn
         self.loss = loss
         
     def forward(self, x):
@@ -110,7 +157,10 @@ class SegmentationModule(pl.LightningModule):
         x, y = batch['source'], batch['mask']
         bs, _, _, _ = x.size()
         y_pred = self(x)
-        loss = self.loss(y_pred, y.view(bs, -1))
+        if not self.is_fcn:
+            loss = self.loss(y_pred, y.view(bs, -1))
+        else:
+            loss = self.loss(y_pred, y)
         self.log('train_loss', loss, prog_bar=True, logger=False,
                 on_step=False, on_epoch=True)
         return loss
@@ -120,7 +170,10 @@ class SegmentationModule(pl.LightningModule):
         x, y = batch['source'], batch['mask']
         bs, _, _, _ = x.size()
         y_pred = self(x)
-        loss = self.loss(y_pred, y.view(bs, -1))
+        if not self.is_fcn:
+            loss = self.loss(y_pred, y.view(bs, -1))
+        else:
+            loss = self.loss(y_pred, y)
         self.log('val_loss', loss, prog_bar=True, logger=False,
                 on_step=False, on_epoch=True)
     
