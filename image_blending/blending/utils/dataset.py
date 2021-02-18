@@ -106,6 +106,7 @@ class ImageDataBlending(Dataset):
                 "dims": dims,
                 "mask": mask}
         
+
 class SegmentationData(Dataset):
     def __init__(self, image_dir, mask_dir=None,
                  img_size=(224, 224),
@@ -114,22 +115,32 @@ class SegmentationData(Dataset):
         self.img_size = img_size
         self.device = device
         self.preprocess = preprocess
-        img = [Path(os.path.join(image_dir, path)) 
+        img = [Path(image_dir+"/"+path) #Path(os.path.join(image_dir, path))
                 for path in os.listdir(image_dir)
                 if path.split(".")[-1] in IMG_EXTENSIONS and "mask" not in path]
-        img = sorted(img, key=lambda path: int(_get_name_file(path).split("_")[1].split(".")[0]))
         
         if mask_dir is None:
             self.train = False
+            img = sorted(img, key=lambda path: int(_get_name_file(path).split("_")[1].split(".")[0]))
+
             self.img_paths = {
                 "img": img
             }
         else:
             self.train = True
-            mask = [Path(os.path.join(mask_dir, path))
+            mask = [Path(mask_dir+"/"+path) #Path(os.path.join(mask_dir, path))
                     for path in os.listdir(mask_dir)
                     if path.split(".")[-1] in IMG_EXTENSIONS and "source" not in path]
             mask = sorted(mask, key=lambda path: int(_get_name_file(path).split("_")[1].split(".")[0]))
+            mask_temp = [_get_name_file(path).split("_")[1].split(".")[0] for path in mask]
+            
+            # filter img to match mask files
+            def _filter_img(x:Path):
+                x_name = _get_name_file(x).split("_")[1].split(".")[0]
+                return  x_name in mask_temp
+            img = list(filter(_filter_img, img))
+            img = sorted(img, key=lambda path: int(_get_name_file(path).split("_")[1].split(".")[0]))
+
             self.img_paths = {
                 "img": img,
                 "mask": mask

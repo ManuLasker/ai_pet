@@ -5,6 +5,7 @@ from typing import Tuple
 from .image import _numpy, unormalize_image
 
 IMAGE_DATA_KEYS = ['source', 'target', 'mask']
+IMAGE_DATA_SEGMENTATION_KEYS = ['source', 'mask']
 
 def plots_multiple_image_data(*images_data, normalize=True, figsize=(10, 5)):    
     fig, ax = plt.subplots(nrows=len(images_data),
@@ -37,7 +38,7 @@ def plots_multiple_image_data(*images_data, normalize=True, figsize=(10, 5)):
 def plots_multiple_segmentation_data(*images_data, preprocess=False,
                                      normalize=True, figsize=(10, 5)):
     fig, ax = plt.subplots(nrows=len(images_data),
-                           ncols=len(images_data[0].keys()),
+                           ncols=len(IMAGE_DATA_SEGMENTATION_KEYS),
                            figsize=figsize,
                            tight_layout=True)
     if len(images_data) == 1:

@@ -91,9 +91,12 @@ def reshape_batch(x:torch.Tensor):
     return x.view(x.size(0), -1)
 
 class VGGFCN(nn.Module):
-    def __init__(self, backbone:int = 16, requires_grad:bool = False):
+    def __init__(self, backbone:int = 16, requires_grad_backbone:bool = False):
         super().__init__()
-        self.vgg = VG16BackBoneSegmentation(requires_grad)
+        vgg = VG16BackBoneSegmentation(requires_grad_backbone)
+        self.vgg_features = vgg.vgg_pretrained_features
+        self.vgg_avgpool = vgg.avgpool
+        vgg_classifier = vgg.classifier
         self.classifier = nn.Sequential(
             nn.Conv2d(512, 4096, kernel_size=7, padding=3),
             nn.ReLU(inplace=True),
@@ -108,34 +111,35 @@ class VGGFCN(nn.Module):
         )
         # Process to transfer weights from linear layers
         # into convolutionar layers
-        self._initialize_weights()
+        self._initialize_weights(vgg_classifier)
         for param in self.classifier.parameters():
             param.requires_grad = True
         
-    def _initialize_weights(self):
+    def _initialize_weights(self, vgg_classifier):
         self.classifier[0].weight.data = (
-            self.vgg.classifier[0].weight.data.view(
+            vgg_classifier[0].weight.data.view(
                 self.classifier[0].weight.size()
             )
         )
         self.classifier[3].weight.data = (
-            self.vgg.classifier[3].weight.data.view(
+            vgg_classifier[3].weight.data.view(
                 self.classifier[3].weight.size()
             )
         )
         self.classifier[6].weight.data = (
-            self.vgg.classifier[6].weight.data.view(
+            vgg_classifier[6].weight.data.view(
                 self.classifier[6].weight.size()
             )
         )
         
     def forward(self, x:torch.Tensor):
         bs, _, h, w = x.size()
-        x = self.vgg.features(x)
-        x = self.vgg.avgpool(x)
+        x = self.vgg_features(x)
+        x = self.vgg_avgpool(x)
         x = self.classifier(x)
         x = F.interpolate(x, size=(h, w),
                          mode='bilinear', align_corners=True)
+        return x
     
 class SegmentationModule(pl.LightningModule):
     def __init__(self, model:nn.Module, loss,
