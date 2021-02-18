@@ -37,8 +37,10 @@ def plots_multiple_image_data(*images_data, normalize=True, figsize=(10, 5)):
     
 def plots_multiple_segmentation_data(*images_data, preprocess=False,
                                      normalize=True, figsize=(10, 5)):
+    ncols = sum([key in images_data[0].keys() 
+                 for key in IMAGE_DATA_SEGMENTATION_KEYS])
     fig, ax = plt.subplots(nrows=len(images_data),
-                           ncols=len(IMAGE_DATA_SEGMENTATION_KEYS),
+                           ncols=ncols,
                            figsize=figsize,
                            tight_layout=True)
     if len(images_data) == 1:
