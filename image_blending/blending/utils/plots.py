@@ -47,6 +47,11 @@ def plots_multiple_segmentation_data(*images_data, preprocess=False,
         if not isinstance(ax, np.ndarray):
             ax = np.array(ax)
         ax = ax.reshape(1, -1)
+    
+    if ncols == 1:
+        if not isinstance(ax, np.ndarray):
+            ax = np.array(ax)
+        ax = ax.reshape(-1, 1)       
         
     for nrow_plot, image_data in enumerate(images_data):
         if preprocess:
@@ -61,7 +66,7 @@ def plots_multiple_segmentation_data(*images_data, preprocess=False,
         if not normalize:
             source = source.astype(np.uint8)
             if mask is not None:
-                mask = mask.astype(np.uint8)
+                mask = mask.astype(np.uint8)    
             
         ax[nrow_plot][0].set_title("source image")
         ax[nrow_plot][0].imshow(source)
