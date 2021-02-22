@@ -18,12 +18,13 @@ def _get_name_file(full_path: Path):
         
 
 class ImageDataBlending(Dataset):
-    def __init__(self, blending_dir, source_dir = None, target_dir = None,
+    def __init__(self, blending_dir, source_dir = None, target_dir = None, target_index = 0,
                  device:torch.device = torch.device('cuda') 
                                     if torch.cuda.is_available() 
                                     else torch.device('cpu')):
         self.blending_dir = blending_dir
         # Initialize files needed for blend
+        self.target_index = target_index
         self.image_data = {"dims": {},
                            "source": {},
                            "target": {},
@@ -63,30 +64,34 @@ class ImageDataBlending(Dataset):
             
     def prepare_data_for_blending(self):
         cpu_device = torch.device('cpu')
+        target_save = False
         for index in tqdm(range(len(self.image_data['mask'])),
                           total = len(self.image_data['mask']), desc="preprocess data"):
-            dims = np.array(json.load(open(self.image_data["dims"][index + 1], "r")),
+            dims = np.array(json.load(open(self.image_data["dims"][self.target_index + 1], "r")),
                             dtype=np.float32)
             mask = _numpy(load_image(self.image_data['mask'][index + 1],
                                      is_mask=True, device=cpu_device))
             source = _numpy(load_image(self.image_data['source'][index + 1],
                                        device=cpu_device))
-            target = _numpy(load_image(self.image_data['target'][index + 1],
+            target = _numpy(load_image(self.image_data['target'][self.target_index + 1],
                                        device=cpu_device))
             mask, source, target, dims = prepare_images_arrays(mask, source, target, dims)
             # save each mask, source, target
             tensors = {"mask":mask,
-                       "source":source,
-                       "target":target}
+                       "source":source}
             for keys, t in tensors.items():
                 _pil_image(t).save(os.path.join(self.blending_dir,
                                                 keys+"_"+str(index + 1)+".jpg"))
-            json.dump([int(xy) for xy in dims], open(os.path.join(self.blending_dir,
-                                                "dims_"+str(index + 1)+".json"), "w"))
+            if not target_save:
+                _pil_image(target).save(os.path.join(self.blending_dir,
+                                                "target"+"_"+str(self.target_index + 1)+".jpg"))
+                json.dump([int(xy) for xy in dims], open(os.path.join(self.blending_dir,
+                                                    "dims_"+str(self.target_index + 1)+".json"), "w"))
+                target_save = True
 
     
     def __len__(self) -> int:
-        return len(self.image_data["dims"])
+        return len(self.image_data["mask"])
     
     def __getitem__(self, index) -> Dict:
         # Assert error in order to stop the indexing
@@ -95,10 +100,10 @@ class ImageDataBlending(Dataset):
         # Load images
         source = load_image(self.image_data["source"][index + 1],
                             device=self.device)
-        target = load_image(self.image_data["target"][index + 1],
+        target = load_image(self.image_data["target"][self.target_index + 1],
                             device=self.device)
         
-        dims = json.load(open(self.image_data["dims"][index + 1], "r"))
+        dims = json.load(open(self.image_data["dims"][self.target_index + 1], "r"))
         mask = load_image(self.image_data["mask"][index + 1], is_mask=True,
                           device=self.device)
         
