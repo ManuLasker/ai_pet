@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 */cvat_data
+*cvat_data
 */data
 # C extensions
 */lightning_logs
