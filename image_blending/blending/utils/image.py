@@ -1,8 +1,8 @@
 import PIL
 import cv2
+from matplotlib.pyplot import contour
 import torch
 import numpy as np
-from torch._C import dtype
 import torch.nn as nn
 
 from typing import Tuple
@@ -247,14 +247,38 @@ def get_grabcut(source, mask, rect):
     # Numpy configuration
     bgdModel = np.zeros(shape=(1, 65), dtype=np.float64)
     fgdModel = np.zeros(shape=(1, 65), dtype=np.float64)
-    
+    mask_ = np.zeros(source.shape[:2], dtype=np.uint8)
     # Grab cut
-    mask_grabcut, _, _ = cv2.grabCut(source.astype(np.uint8),
-                                     mask.astype(np.uint8), xyxy2xywh(rect),
-                                     bgdModel=bgdModel, fgdModel=fgdModel,
-                                     iterCount=10, mode=cv2.GC_INIT_WITH_MASK)
+    cv2.grabCut(source.astype(np.uint8),
+                mask_, xyxy2xywh(rect),
+                bgdModel=bgdModel, fgdModel=fgdModel,
+                iterCount=5, mode=cv2.GC_INIT_WITH_RECT)
     
     # process grab cut
-    mask_grabcut = np.where((mask_grabcut == 2)|(mask_grabcut == 0),
+    mask_grabcut = np.where((mask_ == 2)|(mask_ == 0),
                             0, 1).astype(np.uint8)
+    
+    # Get Contours
+    contours, _ = cv2.findContours(image=mask_grabcut,
+                                   mode=cv2.RETR_TREE,
+                                   method=cv2.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+    # Get bounding box from contours
+    cv2.drawContours(mask_grabcut, [contours[0]], contourIdx=-1, color=(1,0,0), thickness=-1)
+
+    mask_grabcut *= mask.astype(np.uint8)
+    
+    # with mask
+    mask_, bgdModel, fgdModel = cv2.grabCut(source.astype(np.uint8),
+                mask_grabcut, None,
+                bgdModel=bgdModel, fgdModel=fgdModel,
+                iterCount=5, mode=cv2.GC_INIT_WITH_MASK)
+    
+    # process grab cut
+    mask_grabcut = np.where((mask_ == 2)|(mask_ == 0),
+                            0, 1).astype(np.uint8)
+    
+    # doubts
+    # mask_grabcut[mask == 1] = 1
+    # mask_grabcut[mask == 0] = 0
     return mask_grabcut
