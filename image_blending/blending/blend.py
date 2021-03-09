@@ -1,1 +1,0 @@
-from .utils.image import _pil_image

@@ -192,7 +192,8 @@ class Predictor:
     @classmethod
     def load_model(cls, model_path:str):
         if cls.model is None:
-            cls.model = torch.jit.load(model_path)
+            # cls.model = torch.jit.load(model_path)
+            cls.model = torch.load(model_path)
         return cls.model
     
     @classmethod
@@ -201,4 +202,5 @@ class Predictor:
         model.eval()
         with torch.no_grad():
             prediction: torch.Tensor = model(x)
-        return prediction.softmax(dim=1).argmax(dim=1)
+        # return prediction.softmax(dim=1).argmax(dim=1)
+        return prediction
