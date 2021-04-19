@@ -9,6 +9,7 @@ __pycache__/
 */lightning_logs
 *.so
 *.tar.xz
+*.DS_Store
 # .pem extensions
 *.pem
 # Distribution / packaging

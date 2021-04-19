@@ -16,7 +16,7 @@ from blending.utils import general as G
 from blending.utils import plots as P
 from blending.segmentation import (Predictor, SegmentationModule, VGGFCN)
 
-paths = ['E:\\Koombea\\ai_pet\image_blending\\source_data\\source_2.jpg',
+paths = ['E:\\Koombea\\ai_pet\\image_blending\\source_data\\source_2.jpg',
          'E:\\Koombea\\ai_pet\\image_blending\\target_data\\target_1.jpg',
          'E:\\Koombea\\ai_pet\\image_blending\\target_data\\dims_1.json']
 
