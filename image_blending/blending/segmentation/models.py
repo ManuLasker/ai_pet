@@ -204,3 +204,12 @@ class Predictor:
             prediction: torch.Tensor = model(x)
         # return prediction.softmax(dim=1).argmax(dim=1)
         return prediction
+    
+    @classmethod
+    def export_torch_script(cls, model_exported_path):
+        x: torch.Tensor = torch.rand(1, 3, 224, 224)
+        model = cls.load_model(cls.model_path)
+        model.eval()
+        traced_script_module = torch.jit.trace(model, x)
+        traced_script_module.save(model_exported_path)
+        
